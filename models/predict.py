@@ -2,16 +2,44 @@
 
 import pandas as pd
 import joblib
-from utils.feature_engineering import prepare_features
+import sys
+import os
 
-MODEL_PATH = 'models/model.pkl'
+# Add project root to path
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+from utils.feature_engineering import prepare_features
+import config
 
 def load_model():
-    return joblib.load(MODEL_PATH)
+    """
+    Load the trained model from disk
+    
+    Returns:
+        RandomForestClassifier: Loaded model
+    
+    Raises:
+        FileNotFoundError: If model file doesn't exist
+    """
+    if not os.path.exists(config.MODEL_PATH):
+        raise FileNotFoundError(
+            f"Model not found at {config.MODEL_PATH}. "
+            "Please train the model first using: python models/train_model.py"
+        )
+    return joblib.load(config.MODEL_PATH)
 
 def predict_from_live_data(live_df):
+    """
+    Generate predictions for live market data
+    
+    Args:
+        live_df: DataFrame with live market data
+    
+    Returns:
+        list: List of prediction dictionaries with symbol, prediction, and confidence
+    """
     model = load_model()
-    X = prepare_features(live_df)
+    X = prepare_features(live_df.copy())
     probs = model.predict_proba(X)
     predictions = model.predict(X)
 
