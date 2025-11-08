@@ -3,12 +3,20 @@
 from ib_insync import *
 import pandas as pd
 import numpy as np
+import sys
+import os
+
+# Add project root to path
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+import config
 
 def connect_ibkr():
+    """Connect to IBKR with a different client ID than the trader"""
     ib = IB()
     try:
-        ib.connect('127.0.0.1', 7497, clientId=2)
-        print("✅ Connected to IBKR.")
+        # Use clientId + 1 to avoid conflicts with the trader connection
+        ib.connect(config.IBKR_HOST, config.IBKR_PORT, clientId=config.IBKR_CLIENT_ID + 1)
+        print("✅ Connected to IBKR for data fetching.")
     except Exception as e:
         print(f"❌ Failed to connect: {e}")
         raise
@@ -54,5 +62,5 @@ def fetch_live_option_data(symbols):
     ib.disconnect()
 
     df = pd.DataFrame(data)
-    df.to_csv('data/live_input.csv', index=False)
-    print("✅ Live input updated: data/live_input.csv")
+    df.to_csv(config.LIVE_INPUT_PATH, index=False)
+    print(f"✅ Live input updated: {config.LIVE_INPUT_PATH}")

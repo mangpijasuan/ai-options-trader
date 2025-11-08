@@ -3,7 +3,7 @@
 import pandas as pd
 
 def prepare_features(df: pd.DataFrame):
-    df['underlying_return_1d'] = df['underlying_close'].pct_change(fill_method=None).fillna(0)
+    df['underlying_return_1d'] = df['underlying_close'].pct_change().fillna(0)
 
     # Example normalization or clipping if needed
     df['delta'] = df['delta'].clip(-1, 1)
