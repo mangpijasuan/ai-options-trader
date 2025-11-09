@@ -4,3 +4,4 @@ joblib
 ib_insync
 streamlit
 alpaca-py
+python-dotenv
