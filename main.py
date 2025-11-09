@@ -2,7 +2,11 @@
 
 import os
 import sys
+from dotenv import load_dotenv
 from execution.scheduler import run_scheduled_trading
+
+# Load environment variables from .env file
+load_dotenv()
 
 if __name__ == "__main__":
     # Get broker type from environment variable or command line argument
