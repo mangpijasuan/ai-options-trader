@@ -56,10 +56,25 @@ class BrokerFactory:
         secret_key = kwargs.get('secret_key', os.getenv('ALPACA_SECRET_KEY'))
         paper = kwargs.get('paper', os.getenv('ALPACA_PAPER', 'true').lower() == 'true')
         
+        # Check if credentials are missing or empty
         if not api_key or not secret_key:
             raise ValueError(
                 "Alpaca API credentials required. Set ALPACA_API_KEY and ALPACA_SECRET_KEY "
-                "environment variables or pass api_key and secret_key parameters."
+                "environment variables or pass api_key and secret_key parameters.\n"
+                "See BROKER_SETUP.md for setup instructions."
+            )
+        
+        # Check for placeholder values from .env.example
+        placeholder_patterns = ['your_', 'placeholder', 'example', 'here', 'change_me']
+        if any(pattern in api_key.lower() for pattern in placeholder_patterns) or \
+           any(pattern in secret_key.lower() for pattern in placeholder_patterns):
+            raise ValueError(
+                "Invalid Alpaca API credentials detected. Please replace placeholder values "
+                "with your actual API credentials from https://alpaca.markets/\n"
+                "1. Sign up/login at https://alpaca.markets/\n"
+                "2. Get your API keys from the dashboard\n"
+                "3. Set ALPACA_API_KEY and ALPACA_SECRET_KEY in your .env file\n"
+                "See BROKER_SETUP.md for detailed setup instructions."
             )
         
         return AlpacaBroker(api_key=api_key, secret_key=secret_key, paper=paper)
