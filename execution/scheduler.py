@@ -1,4 +1,5 @@
 import time
+import sys
 import pandas as pd
 from models.predict import predict_from_live_data
 from brokers.broker_factory import BrokerFactory
@@ -20,8 +21,37 @@ def run_scheduled_trading(interval_sec=300, broker_type='ibkr'):
         broker_type: Type of broker to use ('ibkr' or 'alpaca')
     """
     broker = BrokerFactory.create_broker(broker_type)
-    broker.connect()
-    print(f"✅ Connected to {broker_type.upper()}. Starting live auto-trading loop...")
+    
+    # Attempt to connect to broker with proper error handling
+    max_retries = 3
+    retry_delay = 5
+    
+    for attempt in range(1, max_retries + 1):
+        try:
+            broker.connect()
+            print(f"✅ Connected to {broker_type.upper()}. Starting live auto-trading loop...")
+            break
+        except Exception as e:
+            if attempt < max_retries:
+                print(f"⚠️  Connection attempt {attempt}/{max_retries} failed. Retrying in {retry_delay} seconds...")
+                time.sleep(retry_delay)
+            else:
+                print(f"\n❌ Failed to connect to {broker_type.upper()} after {max_retries} attempts.")
+                print("\n📋 Troubleshooting steps:")
+                if broker_type == 'ibkr':
+                    print("   1. Ensure TWS (Trader Workstation) or IB Gateway is running")
+                    print("   2. Check that API connections are enabled in TWS/Gateway settings:")
+                    print("      - File → Global Configuration → API → Settings")
+                    print("      - Enable 'Enable ActiveX and Socket Clients'")
+                    print("      - Verify the socket port matches your configuration (default: 7497)")
+                    print("   3. Verify your .env file has correct IBKR_HOST and IBKR_PORT settings")
+                    print("   4. Make sure no firewall is blocking the connection")
+                elif broker_type == 'alpaca':
+                    print("   1. Verify your API keys are correct in the .env file")
+                    print("   2. Check that you have an active internet connection")
+                    print("   3. Ensure you're using the correct environment (paper vs live)")
+                print(f"\nOriginal error: {e}")
+                sys.exit(1)
 
     while True:
         try:
