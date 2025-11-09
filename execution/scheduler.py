@@ -1,8 +1,8 @@
 import time
 import pandas as pd
 from models.predict import predict_from_live_data
-from brokers.option_trader import connect_ibkr, place_option_trade
-from brokers.ibkr_data_fetcher import fetch_live_option_data
+from brokers.broker_factory import BrokerFactory
+from brokers.data_fetcher import fetch_live_option_data
 from utils.helpers import get_next_friday
 from strategies.greeks_optimizer import filter_trades_by_greeks
 
@@ -11,14 +11,22 @@ TRADE_QUANTITY = 1
 EXPIRY = get_next_friday() # Static for now
 STRIKE = 180         # Static for now
 
-def run_scheduled_trading(interval_sec=300):
-    ib = connect_ibkr()
-    print("✅ Connected to IBKR. Starting live auto-trading loop...")
+def run_scheduled_trading(interval_sec=300, broker_type='ibkr'):
+    """
+    Run the scheduled trading loop.
+    
+    Args:
+        interval_sec: Interval between trading cycles in seconds
+        broker_type: Type of broker to use ('ibkr' or 'alpaca')
+    """
+    broker = BrokerFactory.create_broker(broker_type)
+    broker.connect()
+    print(f"✅ Connected to {broker_type.upper()}. Starting live auto-trading loop...")
 
     while True:
         try:
             print("\n⏳ Fetching live data...")
-            fetch_live_option_data(['AAPL', 'TSLA', 'MSFT', 'NVDA', 'SPY', 'QQQ'])  # Add more symbols as needed
+            fetch_live_option_data(broker, ['AAPL', 'TSLA', 'MSFT', 'NVDA', 'SPY', 'QQQ'])  # Add more symbols as needed
 
             print("🔍 Reading data & generating predictions...")
             df = pd.read_csv("data/live_input.csv")
@@ -27,8 +35,7 @@ def run_scheduled_trading(interval_sec=300):
             for pred in predictions:
                 if pred['confidence'] >= CONFIDENCE_THRESHOLD:
                     print(f"✅ Placing trade for {pred['symbol']} — {pred['prediction']} (conf: {pred['confidence']:.2f})")
-                    place_option_trade(
-                        ib=ib,
+                    broker.place_option_trade(
                         symbol=pred['symbol'],
                         right='C' if pred['prediction'] == 'CALL' else 'P',
                         strike=STRIKE,
